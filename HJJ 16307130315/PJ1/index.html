@@ -1,0 +1,141 @@
+<html>
+<head>
+    <meta charset='utf-8'/>
+    <title>music player</title>
+    <link rel="stylesheet" href="./style.css" type="text/css" >
+</head>
+
+<body>
+
+<div class='container'>
+	<div class='picture'>
+    	<canvas id='Visualizer' width="800" height="300"></canvas>
+  </div>
+
+  <div class='song'>
+    	<div class="File-Box">
+    	<input type="file" id='uploadFile'>
+    	<div class="Show-Box">
+        <div>+</div>
+        <span id='selected'>choose a mp3 music</span>
+      </div>
+      </div>
+<script type="text/javascript">
+  var Visualize = function () {
+    this.file = null; // the file to be dealt with
+    this.fileName = null; // the name of file mentioned above
+    this.audioContext = null; // the contextx of the audio to be dealt with
+    this.source = null; // save the audio
+};
+
+//Unified browser API
+Visualize.prototype._perpareAPI = function () {
+    //AudioContext
+    window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.msAudioContext;
+    //requestAnimationFrame
+    window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.msRequestAnimationFrame;
+    try {
+        this.audioContext = new AudioContext();
+    } catch (e) {
+        console.log('this browser does not support audioContext，please try Chrome or Firework.');
+    }
+};
+
+//add event to the file
+Visualize.prototype._addEventListenr = function () {
+    var that = this,
+		audioInput = document.getElementById('uploadFile'),
+		drapContainer = document.getElementsByTagName('canvas')[0],
+		selected = document.getElementById('selected');
+    //monitor a event
+    audioInput.onchange = function () {
+        //if 'canceled',then the length will be 0
+        if (audioInput.files.length !== 0) {
+            that.file = audioInput.files[0];
+            that.fileName = audioInput.files[0].name;
+            selected.innerHTML = audioInput.files[0].name;
+            that._start();
+        }
+    }
+};
+
+Visualize.prototype._start = function () {
+    var that = this,
+		file = this.file,
+		fr = new FileReader();
+    fr.onload = function (e) {
+        var fileResult = e.target.result;
+        var audioContext = that.audioContext;
+        audioContext.decodeAudioData(fileResult, function (buffer) {
+            that._Visualize(audioContext, buffer);
+        }, function (e) {
+            console.log('decode failed');
+        });
+    };
+    // transfer to FileReader
+    fr.readAsArrayBuffer(file);
+};
+
+Visualize.prototype._Visualize = function (audioContext, buffer) {
+    //transfer to BufferSource
+    var audioBufferSouceNode = audioContext.createBufferSource(),
+		analyser = audioContext.createAnalyser();
+    audioBufferSouceNode.connect(analyser);
+    analyser.connect(audioContext.destination);
+    audioBufferSouceNode.buffer = buffer;
+    audioBufferSouceNode.start(0);
+    this._draw(analyser);
+};
+
+Visualize.prototype._draw = function (analyser) {
+    //sampling
+    var canvas = document.getElementById('Visualizer'),
+        cwidth = canvas.width,
+        cheight = canvas.height - 2,
+        meterWidth = 10, //spectrum bar width
+        gap = 2, //spectrum bar spacing
+        capHeight = 2,
+        capStyle = '#fff',
+        meterNum = 800 / (10 + 2), //number of spectrum bars
+        capYPositionArray = [];
+    ctx = canvas.getContext('2d');
+    gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(1, '#0f0');
+    gradient.addColorStop(0.5, '#ff0');
+    gradient.addColorStop(0, '#f00');
+    var drawMeter = function () {
+        var array = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(array);
+        var step = Math.round(array.length / meterNum); //calculate the sampling step size
+        ctx.clearRect(0, 0, cwidth, cheight);
+        for (var i = 0; i < meterNum; i++) {
+            var value = array[i * step]; //get the current energy value
+            if (capYPositionArray.length < Math.round(meterNum)) {
+                capYPositionArray.push(value); //initializes the array that holds the cap position and pushes the data from the first screen into it
+            };
+            ctx.fillStyle = capStyle;
+            //start drawing the cap
+            if (value < capYPositionArray[i]) {
+                ctx.fillRect(i * 12, cheight - (--capYPositionArray[i]), meterWidth, capHeight);
+            } else {
+                ctx.fillRect(i * 12, cheight - value, meterWidth, capHeight);
+                capYPositionArray[i] = value;
+            };
+            //start drawing spectrum bars
+            ctx.fillStyle = gradient;
+            ctx.fillRect(i * 12, cheight - value + capHeight, meterWidth, cheight);
+        }
+        requestAnimationFrame(drawMeter);
+    }
+    requestAnimationFrame(drawMeter);
+};
+
+var Visualizer = new Visualize();
+Visualizer._perpareAPI();
+Visualizer._addEventListenr();
+
+</script>
+
+
+</body>
+</html>

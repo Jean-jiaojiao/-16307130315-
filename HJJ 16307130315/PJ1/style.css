@@ -1,0 +1,54 @@
+html, body {
+    margin: 0;
+    font-family: arial, "Microsoft YaHei";
+    background-color: #272822;
+    color: #FEFEFE;
+}
+
+*{
+  padding: 0px;
+}
+.container{
+  margin-left:20%;
+  margin-top:20%;
+  display: flex;
+}
+  .File-Box{
+      position: relative;
+      width:150px;
+      height:150px;
+      margin: 100px auto;
+  }
+  .File-Box input[type=file]{
+      cursor:pointer;
+      width:100%;
+      height:100%;
+      z-index: 2;
+      opacity:0;
+      position: absolute;
+  }
+  .Show-Box{
+      display: block;
+      z-index: 1;
+      width:100%;
+      height:100%;
+      position: absolute;
+      background:#dfdfdf;
+      border:1px solid #cccccc;
+  }
+  .Show-Box div{
+      font-size: 80px;
+      color: #999999;
+      text-align: center;
+  }
+  .Show-Box span{
+      display: block;
+      font-size: 14px;
+      text-align: center;
+      color: #666666;
+      width:100%;
+      line-height: 15px;
+  }
+  .File-Box:hover .Show-Box div,.File-Box:hover .Show-Box span{
+      color:#90c0f5;
+  }
